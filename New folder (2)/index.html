@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Savings Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            fog: '#E8EDF1',
+            paper: '#F8FAFB',
+            ink: '#17222E',
+            slate2: '#5B6B7A',
+            line: '#CFD8DF',
+            gain: '#0E7466',
+            spend: '#A3264F',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .tabular { font-variant-numeric: tabular-nums; }
+    .chip { background: linear-gradient(135deg, #f3d98b, #c9a24a); }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body class="bg-fog text-ink font-sans min-h-screen">
+  <main class="max-w-xl mx-auto px-4 py-8 sm:py-12">
+
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-xl font-semibold">Savings tracker</h1>
+      <label class="flex items-center gap-2 text-sm text-slate2">
+        Currency
+        <select id="currency" class="bg-paper border border-line rounded-md px-2 py-1 text-ink focus:outline-none focus:ring-2 focus:ring-ink">
+          <option value="PHP">PHP</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+        </select>
+      </label>
+    </header>
+
+    <!-- Total -->
+    <section class="bg-ink text-paper rounded-2xl p-6 mb-6" aria-live="polite">
+      <p class="text-sm text-paper/70">Total savings</p>
+      <p id="total" class="tabular text-4xl sm:text-5xl font-extrabold tracking-tight mt-1 break-words">0.00</p>
+    </section>
+
+    <!-- Accounts as ATM cards -->
+    <section class="mb-6">
+      <h2 class="font-semibold mb-3">Your savings accounts</h2>
+      <p id="no-accounts" class="text-slate2 text-sm mb-3">No accounts yet. Add a savings account below and it will show up as a card with its balance and goal progress.</p>
+      <div id="cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- Add account -->
+    <section class="bg-paper border border-line rounded-2xl p-5 mb-6">
+      <h2 class="font-semibold mb-3">Add savings account</h2>
+      <form id="acc-form" class="space-y-3" novalidate>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block text-sm text-slate2">
+            Bank or wallet
+            <select id="bank" class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink">
+              <option>BDO</option>
+              <option>BPI</option>
+              <option>Metrobank</option>
+              <option>UnionBank</option>
+              <option>Landbank</option>
+              <option>PNB</option>
+              <option>Security Bank</option>
+              <option>GCash</option>
+              <option>Maya</option>
+              <option>Cash</option>
+              <option value="__other">Other…</option>
+            </select>
+          </label>
+          <label class="block text-sm text-slate2">
+            Starting balance
+            <input id="acc-start" type="number" step="0.01" inputmode="decimal" placeholder="0.00"
+              class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink tabular focus:outline-none focus:ring-2 focus:ring-ink" />
+          </label>
+        </div>
+
+        <label id="bank-other-wrap" class="block text-sm text-slate2 hidden">
+          Bank name
+          <input id="bank-other" type="text" maxlength="24" placeholder="Type the bank name"
+            class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink" />
+        </label>
+
+        <label class="block text-sm text-slate2">
+          Label (optional)
+          <input id="nickname" type="text" maxlength="24" placeholder="e.g. Savings, Payroll"
+            class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink" />
+        </label>
+
+        <label class="block text-sm text-slate2">
+          Savings goal (optional)
+          <input id="acc-goal" type="number" step="0.01" min="0" inputmode="decimal" placeholder="e.g. 50000"
+            class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink tabular focus:outline-none focus:ring-2 focus:ring-ink" />
+        </label>
+
+        <fieldset>
+          <legend class="text-sm text-slate2 mb-1">Card color</legend>
+          <div id="swatches" class="flex gap-2"></div>
+        </fieldset>
+
+        <p id="acc-error" class="text-sm text-spend min-h-[1.25rem]" role="alert"></p>
+
+        <button type="submit"
+          class="w-full bg-ink text-paper rounded-lg py-2.5 font-semibold hover:bg-slate2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ink transition-colors">
+          Add account
+        </button>
+      </form>
+    </section>
+
+    <!-- Add transaction -->
+    <section class="bg-paper border border-line rounded-2xl p-5 mb-6">
+      <h2 class="font-semibold mb-3">Add transaction</h2>
+      <form id="tx-form" class="space-y-3" novalidate>
+        <label class="block text-sm text-slate2">
+          Account
+          <select id="tx-account" class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink"></select>
+        </label>
+
+        <fieldset class="grid grid-cols-2 gap-2">
+          <legend class="sr-only">Transaction type</legend>
+          <label class="cursor-pointer">
+            <input type="radio" name="type" value="deposit" class="peer sr-only" checked />
+            <span class="block text-center rounded-lg border border-line bg-white py-2 font-semibold peer-checked:bg-gain peer-checked:text-white peer-checked:border-gain peer-focus-visible:ring-2 peer-focus-visible:ring-ink">Deposit</span>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="type" value="withdrawal" class="peer sr-only" />
+            <span class="block text-center rounded-lg border border-line bg-white py-2 font-semibold peer-checked:bg-spend peer-checked:text-white peer-checked:border-spend peer-focus-visible:ring-2 peer-focus-visible:ring-ink">Withdrawal</span>
+          </label>
+        </fieldset>
+
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block text-sm text-slate2">
+            Amount
+            <input id="amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00"
+              class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink tabular focus:outline-none focus:ring-2 focus:ring-ink" />
+          </label>
+          <label class="block text-sm text-slate2">
+            Date
+            <input id="date" type="date"
+              class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink" />
+          </label>
+        </div>
+
+        <label class="block text-sm text-slate2">
+          Note
+          <input id="note" type="text" maxlength="80" placeholder="e.g. Salary, ATM withdrawal, groceries"
+            class="mt-1 w-full bg-white border border-line rounded-lg px-3 py-2 text-ink focus:outline-none focus:ring-2 focus:ring-ink" />
+        </label>
+
+        <p id="form-error" class="text-sm text-spend min-h-[1.25rem]" role="alert"></p>
+
+        <button type="submit"
+          class="w-full bg-ink text-paper rounded-lg py-2.5 font-semibold hover:bg-slate2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ink transition-colors">
+          Add transaction
+        </button>
+      </form>
+    </section>
+
+    <!-- Transactions -->
+    <section class="bg-paper border border-line rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3 gap-2">
+        <h2 class="font-semibold">Transactions: <span id="filter-label" class="font-normal text-slate2">All accounts</span></h2>
+        <button id="show-all" type="button" class="hidden text-sm text-slate2 underline rounded focus:outline-none focus:ring-2 focus:ring-ink">Show all</button>
+      </div>
+      <p id="empty" class="text-slate2 text-sm">No transactions yet. Add your first deposit or withdrawal above.</p>
+      <ul id="tx-list" class="divide-y divide-line"></ul>
+    </section>
+
+    <p class="text-xs text-slate2 text-center mt-6">Tap a card to see only that account's transactions. Everything is saved in this browser only. Nothing is sent anywhere.</p>
+  </main>
+
+  <!-- Undo toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden bg-ink text-paper rounded-lg shadow-lg px-4 py-2 text-sm items-center gap-3" role="status">
+    <span>Transaction deleted.</span>
+    <button id="undo" type="button" class="font-semibold underline focus:outline-none focus:ring-2 focus:ring-paper rounded">Undo</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
